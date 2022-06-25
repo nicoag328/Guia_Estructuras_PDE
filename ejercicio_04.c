@@ -3,15 +3,14 @@
 // Ejercicio 4
 
 #include <stdio.h>
-#include <errno.h>
-#include "scan_wrappers.h"
-#include "csv_parse.h"
+#include <string.h>
+#include "csv_file.c"
 
 struct fecha_t
 {
 	int mes;
 	int dia;
-}
+};
 
 struct factura_t
 {
@@ -24,49 +23,97 @@ struct factura_t
 int main(int argc, char* argv[])
 {
 
-	// Verificar la cantidad de argumentos
+	// Nombre de archivo por defecto
+	char default_file[] = "ejercicio_04.csv";
+	char *filename = default_file;
+
+	// Verificar los argumentos
 	if (argc < 2)
 	{
-		printf("Modo de uso: ejercicio04 <archivo.csv>");
+		printf("Modo de uso: ejercicio_04 <archivo.csv>\nUsando archivo por defecto ejercicio_04.csv\n\n");
+	}
+	else
+	{
+		filename = argv[1];
+	}
+
+	// Declaracion de variables
+	struct factura_t facturas[10];
+	struct csv_file_t csv_file;
+	char buf[30];
+	float totales_meses[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	int mejor_mes = 0;
+
+	// Abrir archivo csv
+	if(csv_open(&csv_file, filename) != 0)
 		return -1;
-	}
 
-	// Abrir archivo
-	FILE* fp = fopen(argv[1], "r");
-
-	// Verificar si el archivo se abrio correctamente
-	if (fp = NULL)
+	
+	// Leer los datos de las facturas del archivo csv
+	for (int i = 0; i < 10; i++)
 	{
-		perror("Error opening file: ");
-		return -1;
+		// Leer numero de la factura
+		if(csv_get_field(&csv_file, buf, 30, i, 0) != 0)
+			return -1;
+	
+		if(sscanf(buf, "%d", &facturas[i].numero) != 1)
+		{
+			printf("Datos invalidos\n");
+			return -1;
+		}
+
+		// Leer mes de la factura
+		if(csv_get_field(&csv_file, buf, 30, i, 1) != 0)
+			return -1;
+
+		if(sscanf(buf, "%d", &facturas[i].fecha.mes) != 1)
+		{
+			printf("Datos invalidos\n");
+			return -1;
+		}
+		
+		// Leer dia de la factura
+		if(csv_get_field(&csv_file, buf, 30, i, 2) != 0)
+			return -1;
+		
+		if(sscanf(buf, "%d", &facturas[i].fecha.dia) != 1)
+		{
+			printf("Datos invalidos\n");
+			return -1;
+		}
+
+		// Leer nombre de cliente de la factura
+		if(csv_get_field(&csv_file, buf, 30, i, 3) != 0)
+			return -1;
+		
+		strcpy(facturas[i].cliente, buf);
+
+		// Leer monto de la factura
+		if(csv_get_field(&csv_file, buf, 30, i, 4) != 0)
+			return -1;
+		
+		if(sscanf(buf, "%f", &facturas[i].monto) != 1)
+		{
+			printf("Datos invalidos\n");
+			return -1;
+		}
 	}
 
-	struct estudiante_t estudiantes[5];
-
-	// Obtener datos de los estudiantes
-	for (int i = 0; i < 5; i++)
+	// Sumar los totales de cada mes
+	for (int i = 0; i < 10; i++)
 	{
-		printf("Ingrese los datos del estudiante %d\n", i + 1);
-
-		printf("DNI: ");
-		estudiantes[i].dni = scan_int();
-
-		printf("Nota del primer cuatrimestre: ");
-		estudiantes[i].notas[0] = scan_float();
-
-		printf("Nota del segundo cuatrimestre: ");
-		estudiantes[i].notas[1] = scan_float();
+		totales_meses[facturas[i].fecha.mes - 1] += facturas[i].monto;
 	}
 
-	printf("\nDNI\tPromedio\n");
-
-	// Calcular promedios de cada estudiante y mostrarlos en pantalla
-	for (int i = 0; i<5; i++)
+	// Encotrar el mes en el que mas se recaudo
+	for(int i = 0; i < 12; i++)
 	{
-		float promedio = (estudiantes[i].notas[0] + estudiantes[i].notas[1]) / 2;
-
-		printf("%d\t%.02f\n", estudiantes[i].dni, promedio);
+		if(totales_meses[i] >= totales_meses[mejor_mes])
+			mejor_mes = i;
 	}
+
+	// Mostrar cual fue el mejor mes
+	printf("El mejor mes fue el %d con un total de %.02f\n", mejor_mes + 1, totales_meses[mejor_mes]);
 
 	return 0;
 }
