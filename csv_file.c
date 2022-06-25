@@ -77,6 +77,8 @@ int csv_get_field (struct csv_file_t* csv_file, char* buf, int length, int line,
 		if (feof(csv_file->fp) || c == '\n' || c == ',')
 		{
 			rewind(csv_file->fp);
+			csv_file->line_pos = 0;
+			csv_file->field_pos = 0;
 			break;
 		}
 
@@ -84,6 +86,7 @@ int csv_get_field (struct csv_file_t* csv_file, char* buf, int length, int line,
 		if (c == '\n')
 		{
 			csv_file->line_pos++;
+			csv_file->field_pos = 0;
 			break;
 		}
 		
@@ -104,7 +107,6 @@ int csv_get_field (struct csv_file_t* csv_file, char* buf, int length, int line,
 	}
 	
 	// Write trailing zero
-	buf_pos++;
 	buf[buf_pos] = 0;	
 
 	return 0;
